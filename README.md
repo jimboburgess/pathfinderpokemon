@@ -11,7 +11,7 @@ AS ON 7/6/20206 IT IS PROGRAMMED TO RUN ON two BUTTONS, and an ec11 encoder
 
 
 
-The eventualy plan is to have a small RPG.
+The eventual plan is to have a small RPG.
 
 Character select
   Fighter
