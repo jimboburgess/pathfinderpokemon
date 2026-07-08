@@ -4,6 +4,9 @@ IT RUNS ON AN ESP32-S3-ZERO ON A 240 X 240 TFT SCREEN.
 
 AS ON 7/6/20206 IT IS PROGRAMMED TO RUN ON THREE BUTTONS, THOUGH THAT MAY CHANGE. 
 
+<img width="1691" height="1221" alt="image" src="https://github.com/user-attachments/assets/631afe45-fe55-441c-944a-fd2711bef958" />
+
+
 The eventualy plan is to have a small RPG.
 
 Character select
