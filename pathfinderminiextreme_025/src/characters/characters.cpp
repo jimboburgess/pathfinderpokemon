@@ -275,3 +275,24 @@ bool isDead(const Character& character)
 {
     return character.state == STATE_DEAD;
 }
+
+const char* getCharacterClassName(CharacterClass characterClass)
+{
+    switch (characterClass)
+    {
+        case CLASS_FIGHTER:
+            return "Fighter";
+
+        case CLASS_ROGUE:
+            return "Rogue";
+
+        case CLASS_WIZARD:
+            return "Wizard";
+
+        case CLASS_CLERIC:
+            return "Cleric";
+
+        default:
+            return "Unknown";
+    }
+}

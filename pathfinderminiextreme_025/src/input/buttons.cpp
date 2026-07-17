@@ -4,6 +4,7 @@
 
 #include "buttons.h"
 #include "Arduino.h"
+#include "characters/sheet.h"
 
 //======================================
 // Input State
@@ -25,16 +26,22 @@ const uint16_t ENCODER_DEBOUNCE = 3;
 void handleStartButtons()
 {
     bool selectNow = digitalRead(ENCODER_SW);
+    bool aNow = digitalRead(BUTTON_A);
+    bool bNow = digitalRead(BUTTON_B);
 
-    if (selectNow == LOW && selectLast == HIGH)
+    if ((selectNow == LOW && selectLast == HIGH) ||
+        (aNow == LOW && aLast == HIGH) ||
+        (bNow == LOW && bLast == HIGH))
     {
         playSound(SoundEffect::MENU_SELECT);
-
+        resetButtonStates();
         gameState = GAME_CHARACTER_CREATION;
         needsRedraw = true;
     }
 
     selectLast = selectNow;
+    aLast = aNow;
+    bLast = bNow;
 }
 
 //======================================================
@@ -44,58 +51,147 @@ void handleStartButtons()
 void handleCharacterCreationButtons()
 {
     bool selectNow = digitalRead(ENCODER_SW);
-    bool aNow = digitalRead(BUTTON_A);
-    bool bNow = digitalRead(BUTTON_B);
-    bool clkNow = digitalRead(ENCODER_CLK);
+    bool aNow      = digitalRead(BUTTON_A);
+    bool bNow      = digitalRead(BUTTON_B);
+    bool clkNow    = digitalRead(ENCODER_CLK);
+    bool dtNow     = digitalRead(ENCODER_DT);
 
-    // Encoder rotation
+    //--------------------------------------------------
+    // Encoder Rotation
+    //--------------------------------------------------
+
     if (clkNow != encoderLastCLK && clkNow == LOW)
     {
         if (millis() - encoderLastMove > ENCODER_DEBOUNCE)
         {
             encoderLastMove = millis();
 
-            if (digitalRead(ENCODER_DT) != clkNow)
-            {
-                rotateCharacterClassCW();
-            }
-            else
-            {
-                rotateCharacterClassCCW();
-            }
+            bool clockwise = (dtNow != clkNow);
 
-            playSound(SoundEffect::MENU_MOVE);
-            needsRedraw = true;
+            switch (getCharacterCreationState())
+            {
+                case CCS_CLASS_SELECT:
+
+                    if (clockwise)
+                        rotateCharacterClassCW();
+                    else
+                        rotateCharacterClassCCW();
+
+                    playSound(SoundEffect::MENU_MOVE);
+                    break;
+
+                case CCS_VIEW_STATS:
+
+                    if (clockwise)
+                        scrollCharacterSheetDown();
+                    else
+                        scrollCharacterSheetUp();
+
+                    needsRedraw = true;
+                    playSound(SoundEffect::MENU_MOVE);
+                    break;
+
+                case CCS_MENU:
+
+                    if (clockwise)
+                        menuDown();
+                    else
+                        menuUp();
+
+                    playSound(SoundEffect::MENU_MOVE);
+
+                    // Menu redraws itself.
+                    break;
+            }
         }
     }
 
     encoderLastCLK = clkNow;
 
-    // Encoder button = Select Class
+    //--------------------------------------------------
+    // Encoder Click
+    //--------------------------------------------------
+
     if (selectNow == LOW && selectLast == HIGH)
     {
         playSound(SoundEffect::MENU_SELECT);
 
-        createPreviewCharacter();
+        switch (getCharacterCreationState())
+        {
+            case CCS_CLASS_SELECT:
 
-        needsRedraw = true;
+                createPreviewCharacter();
+                break;
+
+            case CCS_VIEW_STATS:
+
+                // Nothing to select.
+                break;
+
+            case CCS_MENU:
+
+                menuSelect();
+                break;
+        }
     }
 
-    // A = Accept Character
+    //--------------------------------------------------
+    // A Button
+    //--------------------------------------------------
+
     if (aNow == LOW && aLast == HIGH)
     {
-        acceptCharacter();
+        switch (getCharacterCreationState())
+        {
+            case CCS_CLASS_SELECT:
 
-        needsRedraw = true;
+                // No action.
+                break;
+
+            case CCS_VIEW_STATS:
+
+                openCharacterMenu();
+                playSound(SoundEffect::MENU_SELECT);
+                break;
+
+            case CCS_MENU:
+
+                // Reserved for future submenus.
+                break;
+        }
     }
 
-    // B = Reroll
+    //--------------------------------------------------
+    // B Button
+    //--------------------------------------------------
+
     if (bNow == LOW && bLast == HIGH)
     {
-        rerollCharacter();
+        switch (getCharacterCreationState())
+        {
+            case CCS_CLASS_SELECT:
 
-        needsRedraw = true;
+                // Nothing.
+                break;
+
+            case CCS_VIEW_STATS:
+
+                enterCharacterCreation();
+
+                playSound(SoundEffect::MENU_SELECT);
+                break;
+
+            case CCS_MENU:
+
+                closeCharacterMenu();
+                playSound(SoundEffect::MENU_SELECT);
+                break;
+        }
     }
+
+    //--------------------------------------------------
+    // Save Button States
+    //--------------------------------------------------
 
     selectLast = selectNow;
     aLast = aNow;
@@ -210,6 +306,17 @@ void handleDungeonButtons()
 //======================================================
 // Main Button Handler
 //======================================================
+
+void resetButtonStates()
+{
+    encoderLastCLK = digitalRead(ENCODER_CLK);
+
+    selectLast = digitalRead(ENCODER_SW);
+    aLast = digitalRead(BUTTON_A);
+    bLast = digitalRead(BUTTON_B);
+
+    encoderLastMove = millis();
+}
 
 void handleButtons()
 {

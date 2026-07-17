@@ -1,14 +1,10 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include <SPI.h>
-
 #include "config.h"
 #include "data/game.h"
-
 #include "audio/audio.h"
-
 #include "characters/characters.h"
-
 #include "dungeon/combat.h"
 #include "dungeon/dungeon.h"
 #include "dungeon/dungeonplayer.h"
@@ -19,11 +15,6 @@
 #include "graphics/sprites.h"
 
 #include "input/buttons.h"
-
-Adafruit_ST7789 tft(
-    TFT_CS,
-    TFT_DC,
-    TFT_RST);
 
 GameState gameState = GAME_START;
 

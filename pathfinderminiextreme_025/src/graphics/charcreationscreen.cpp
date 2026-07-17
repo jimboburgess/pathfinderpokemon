@@ -3,13 +3,14 @@
 //
 
 #include "charcreationscreen.h"
-
+#include "characters/sheet.h"
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7789.h>
 #include "dungeon/dungeon.h"
 #include "characters/charactercreation.h"
 #include "config.h"
 #include "data/game.h"
+#include "input/buttons.h"
 
 static const char *classNames[] =
 {
@@ -23,12 +24,18 @@ extern Adafruit_ST7789 tft;
 
 static Character previewCharacter;
 static CharacterClass selectedClass = CLASS_FIGHTER;
+
 static bool showingPreview = false;
 
-void enterCharacterCreation() {
+static CharacterCreationState creationState = CCS_CLASS_SELECT;
+static CharacterCreationMenuOption selectedMenu = MENU_ACCEPT;
+
+void enterCharacterCreation()
+{
     selectedClass = CLASS_FIGHTER;
     showingPreview = false;
-
+    creationState = CCS_CLASS_SELECT;
+    resetButtonStates();
     needsRedraw = true;
 }
 
@@ -55,54 +62,77 @@ static void drawClassSelection() {
     tft.setTextSize(1);
 
     tft.setCursor(15, 220);
-    tft.print("Encoder = Select   A = Choose");
+    tft.print("Encoder = Select");
 }
 
-static void drawPreview() {
-    tft.fillScreen(ST77XX_BLACK);
+static void drawPreview()
+{
+    enterCharacterSheet(&previewCharacter);
+    drawCharacterSheet();
+}
+
+static void drawCharacterMenu()
+{
+    tft.fillRect(30, 30, 180, 150, ST77XX_BLUE);
+
+    tft.drawRect(30, 30, 180, 150, ST77XX_WHITE);
 
     tft.setTextColor(ST77XX_WHITE);
     tft.setTextSize(2);
 
-    tft.setCursor(10, 10);
-    tft.println(classNames[selectedClass]);
+    const char* options[] =
+    {
+        "Accept",
+        "Reroll",
+        "Change Class",
+        "Cancel"
+    };
 
-    tft.setTextSize(2);
+    for (int i = 0; i < 4; i++)
+    {
+        tft.setCursor(45, 50 + i * 30);
 
-    tft.setCursor(10, 45);
-    tft.print("STR ");
-    tft.println(previewCharacter.abilities.strength);
+        if (i == selectedMenu)
+            tft.print("> ");
+        else
+            tft.print("  ");
 
-    tft.print("DEX ");
-    tft.println(previewCharacter.abilities.dexterity);
-
-    tft.print("CON ");
-    tft.println(previewCharacter.abilities.constitution);
-
-    tft.print("INT ");
-    tft.println(previewCharacter.abilities.intelligence);
-
-    tft.print("WIS ");
-    tft.println(previewCharacter.abilities.wisdom);
-
-    tft.print("CHA ");
-    tft.println(previewCharacter.abilities.charisma);
-
-    tft.println();
-
-    tft.print("HP ");
-    tft.println(previewCharacter.maxHP);
-
-    tft.setCursor(10, 220);
-
-    tft.print("A=Accept  Encoder=Reroll");
+        tft.println(options[i]);
+    }
 }
 
-void drawCharacterCreationScreen() {
+
+
+CharacterCreationState getCharacterCreationState()
+{
+    return creationState;
+}
+
+
+bool isShowingPreview()
+{
+    return showingPreview;
+}
+
+bool isCharacterMenuOpen()
+{
+    return creationState == CCS_MENU;
+}
+
+
+void drawCharacterCreationScreen()
+{
     if (showingPreview)
+    {
         drawPreview();
+
+        if (creationState == CCS_MENU)
+            drawCharacterMenu();
+    }
     else
+    {
         drawClassSelection();
+    }
 }
 
 //======================================================
@@ -135,10 +165,13 @@ void rotateCharacterClassCCW() {
 // Create Preview Character
 //======================================================
 
-void createPreviewCharacter() {
+void createPreviewCharacter()
+{
     createCharacter(previewCharacter, selectedClass);
 
     showingPreview = true;
+
+    creationState = CCS_VIEW_STATS;
 
     needsRedraw = true;
 }
@@ -171,9 +204,85 @@ void acceptCharacter() {
     addCharacterToDungeon(&player);
 
     // Continue to town
+    resetButtonStates();
     gameState = GAME_TOWN;
 
     showingPreview = false;
+
+    needsRedraw = true;
+}
+
+void openCharacterMenu()
+{
+    Serial.println("Open Menu");
+
+    creationState = CCS_MENU;
+    selectedMenu = MENU_ACCEPT;
+    needsRedraw = true;
+}
+
+void closeCharacterMenu()
+{
+    Serial.println("Close Menu");
+
+    creationState = CCS_VIEW_STATS;
+    needsRedraw = true;
+}
+
+void menuUp()
+{
+    if (creationState != CCS_MENU)
+        return;
+
+    if (selectedMenu == MENU_ACCEPT)
+        selectedMenu = MENU_CANCEL;
+    else
+        selectedMenu =
+            (CharacterCreationMenuOption)(selectedMenu - 1);
+
+    drawCharacterMenu();
+}
+
+void menuDown()
+{
+    if (creationState != CCS_MENU)
+        return;
+
+    selectedMenu =
+        (CharacterCreationMenuOption)((selectedMenu + 1) % 4);
+
+    drawCharacterMenu();
+}
+
+void menuSelect()
+{
+    Serial.print("Menu Select: ");
+    Serial.println(selectedMenu);
+
+    if (creationState != CCS_MENU)
+        return;
+
+    switch (selectedMenu)
+    {
+        case MENU_ACCEPT:
+            acceptCharacter();
+            break;
+
+        case MENU_REROLL:
+            rerollCharacter();
+            closeCharacterMenu();
+            break;
+
+        case MENU_CHANGE_CLASS:
+            showingPreview = false;
+            creationState = CCS_CLASS_SELECT;
+            needsRedraw = true;
+            break;
+
+        case MENU_CANCEL:
+            closeCharacterMenu();
+            break;
+    }
 
     needsRedraw = true;
 }

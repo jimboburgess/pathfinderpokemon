@@ -15,6 +15,11 @@
 #include "dungeon/dungeonplayer.h"
 #include "dungeon/roomdraw.h"
 
+Adafruit_ST7789 tft(
+    TFT_CS,
+    TFT_DC,
+    TFT_RST);
+
 void drawStartScreen()
 {
     tft.fillScreen(ST77XX_BLACK);

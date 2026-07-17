@@ -22,5 +22,6 @@ void handleStartButtons();
 void handleCharacterCreationButtons();
 void handleTownButtons();
 void handleDungeonButtons();
+void resetButtonStates();
 
 #endif // PATHFINDERMINIEXTREME_025_BUTTONS_H

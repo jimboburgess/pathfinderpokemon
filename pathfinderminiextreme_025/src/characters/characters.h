@@ -248,4 +248,6 @@ bool isAlive(const Character& character);
 
 bool isDead(const Character& character);
 
+const char* getCharacterClassName(CharacterClass characterClass);
+
 #endif // PATHFINDERMINIEXTREME_025_CHARACTERS_H
