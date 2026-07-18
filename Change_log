@@ -2,3 +2,12 @@ Changelog
 
 7/16/2026 expanded character sheet, corrected glitches with the button controls in character creation.
 New file uploadedpathfinderminiextreme_025
+
+7/17/2026
+finsihed many helper functions in the character sheet
+change nomenclature for button and encoder presses to something more obvious
+encoderButtonPressed()
+encoderButtonLongPressed()
+buttonAPressed()
+buttonBPressed()
+added a function to view the character sheet with a long press of the encoder button. 
